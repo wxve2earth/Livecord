@@ -1,0 +1,165 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Discord Presence Demo</title>
+<style>
+  :root { color-scheme: dark; }
+  body { margin: 0; min-height: 100vh; display: grid; place-items: center; background: #111318; color: #e6e8ee; font-family: system-ui, sans-serif; }
+  .card { width: min(360px, 92vw); background: #1b1e26; border-radius: 16px; padding: 20px; box-shadow: 0 10px 30px rgba(0,0,0,.4); }
+  .top { display: flex; gap: 14px; align-items: center; }
+  .avatar-wrap { position: relative; width: 64px; height: 64px; flex-shrink: 0; }
+  .avatar { width: 64px; height: 64px; border-radius: 50%; object-fit: cover; background: #2a2e39; }
+  .dot { position: absolute; right: -2px; bottom: -2px; width: 15px; height: 15px; border-radius: 50%; border: 3px solid #1b1e26; background: #80848e; }
+  .name { font-size: 1.15rem; font-weight: 600; }
+  .sub { color: #9aa0ae; font-size: .85rem; }
+  .section { margin-top: 16px; padding-top: 16px; border-top: 1px solid #2a2e39; }
+  .spotify { display: flex; gap: 12px; align-items: center; }
+  .art { width: 64px; height: 64px; border-radius: 8px; object-fit: cover; flex-shrink: 0; }
+  .song { font-weight: 600; }
+  .bar { height: 4px; background: #2a2e39; border-radius: 2px; margin-top: 12px; overflow: hidden; }
+  .fill { height: 100%; width: 0; background: #1db954; }
+  .times { display: flex; justify-content: space-between; font-size: .75rem; color: #9aa0ae; margin-top: 4px; }
+  .hidden { display: none; }
+  .msg { text-align: center; color: #9aa0ae; }
+</style>
+</head>
+<body>
+<div class="card">
+  <div id="msg" class="msg">Connecting…</div>
+
+  <div id="main" class="hidden">
+    <div class="top">
+      <div class="avatar-wrap">
+        <img id="avatar" class="avatar" alt="">
+        <span id="dot" class="dot"></span>
+      </div>
+      <div>
+        <div id="name" class="name"></div>
+        <div id="username" class="sub"></div>
+        <div id="platforms" class="sub"></div>
+      </div>
+    </div>
+
+    <div id="custom" class="section hidden"></div>
+    <div id="game" class="section hidden">
+      <div class="spotify">
+        <img id="gameimg" class="art" alt="">
+        <div>
+          <div class="sub">Playing</div>
+          <div id="gamename" class="song"></div>
+          <div id="gamedetail" class="sub"></div>
+        </div>
+      </div>
+    </div>
+
+    <div id="spotify" class="section hidden">
+      <div class="spotify">
+        <img id="art" class="art" alt="">
+        <div>
+          <div class="sub">Listening to Spotify</div>
+          <div id="song" class="song"></div>
+          <div id="artist" class="sub"></div>
+        </div>
+      </div>
+      <div class="bar"><div id="fill" class="fill"></div></div>
+      <div class="times"><span id="elapsed">0:00</span><span id="duration">0:00</span></div>
+    </div>
+  </div>
+</div>
+
+<script>
+  // Change this ID, or open the page as /demo/?id=SOME_USER_ID
+  const USER_ID = new URLSearchParams(location.search).get('id') || '1263841243839070229';
+
+  const $ = (id) => document.getElementById(id);
+  const COLORS = { online: '#23a55a', idle: '#f0b232', dnd: '#f23f43', offline: '#80848e' };
+  let spotify = null;
+
+  function fmt(ms) {
+    const s = Math.max(0, Math.floor(ms / 1000));
+    return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
+  }
+
+  function render(d) {
+    if (!d) {
+      $('main').classList.add('hidden');
+      $('msg').classList.remove('hidden');
+      $('msg').textContent = 'This user is not being monitored.';
+      return;
+    }
+    $('msg').classList.add('hidden');
+    $('main').classList.remove('hidden');
+
+    $('avatar').src = d.discord_user.avatar_url;
+    $('name').textContent = d.discord_user.display_name;
+    $('username').textContent = '@' + d.discord_user.username;
+    $('dot').style.background = COLORS[d.discord_status] ?? COLORS.offline;
+    $('platforms').textContent = d.platforms.length
+      ? `${d.discord_status} on ${d.platforms.join(', ')}`
+      : d.discord_status;
+
+    // custom status (type 4)
+    const custom = d.activities.find((a) => a.type === 4);
+    $('custom').classList.toggle('hidden', !custom);
+    if (custom) {
+      const emoji = custom.emoji && !custom.emoji.id ? custom.emoji.name : null;
+      $('custom').textContent = [emoji, custom.state].filter(Boolean).join(' ');
+    }
+
+    // game (type 0)
+    const game = d.activities.find((a) => a.type === 0);
+    $('game').classList.toggle('hidden', !game);
+    if (game) {
+      const img = game.assets?.large_image ?? game.app_icon;
+      $('gameimg').classList.toggle('hidden', !img);
+      if (img) $('gameimg').src = img;
+      $('gamename').textContent = game.name;
+      $('gamedetail').textContent = [game.details, game.state].filter(Boolean).join(' — ');
+    }
+
+    // spotify
+    spotify = d.spotify;
+    $('spotify').classList.toggle('hidden', !spotify);
+    if (spotify) {
+      $('art').src = spotify.album_art_url;
+      $('song').textContent = spotify.song;
+      $('artist').textContent = spotify.artist;
+      $('duration').textContent = fmt(spotify.timestamps.end - spotify.timestamps.start);
+    }
+    tick();
+  }
+
+  function tick() {
+    if (!spotify) return;
+    const { start, end } = spotify.timestamps;
+    const elapsed = Math.min(Date.now() - start, end - start);
+    $('fill').style.width = (elapsed / (end - start)) * 100 + '%';
+    $('elapsed').textContent = fmt(elapsed);
+  }
+  setInterval(tick, 500);
+
+  function connect() {
+    const proto = location.protocol === 'https:' ? 'wss://' : 'ws://';
+    const ws = new WebSocket(proto + location.host + '/socket');
+    let heartbeat;
+
+    ws.onmessage = (e) => {
+      const msg = JSON.parse(e.data);
+      if (msg.op === 1) { // hello: subscribe and start heartbeats
+        ws.send(JSON.stringify({ op: 2, d: { subscribe_to_id: USER_ID } }));
+        heartbeat = setInterval(() => ws.send(JSON.stringify({ op: 3 })), msg.d.heartbeat_interval);
+      }
+      if (msg.op === 0) render(msg.d); // INIT_STATE and PRESENCE_UPDATE
+    };
+
+    ws.onclose = () => {
+      clearInterval(heartbeat);
+      setTimeout(connect, 3000); // reconnect if the connection drops
+    };
+  }
+  connect();
+</script>
+</body>
+</html>
