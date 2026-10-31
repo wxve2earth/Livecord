@@ -13,7 +13,7 @@ export function getUser(id) {
 }
 
 export function removeUser(id) {
-  users.delete(id);
+  if (users.delete(id)) events.emit('remove', id);
 }
 
 export function getAllUsers() {

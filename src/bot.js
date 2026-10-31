@@ -5,7 +5,6 @@ import { serializeMember } from './serialize.js';
 import { primeAppIcons } from './appIcons.js';
 import { primeProfile } from './profile.js';
 
-// should this member be exposed through the API?
 function isTracked(member) {
   if (member.user.bot) return false;
   if (config.roleId && !member.roles.cache.has(config.roleId)) return false;
@@ -15,7 +14,6 @@ function isTracked(member) {
   return true;
 }
 
-// add/update a member, or remove them if they no longer match the filters
 async function track(member, presence = member.presence) {
   if (!isTracked(member)) {
     removeUser(member.id);
@@ -41,7 +39,6 @@ export async function startBot() {
 
     const guild = await client.guilds.fetch(config.guildId);
 
-    // check the optional filters point to something that exists
     if (config.roleId && !guild.roles.cache.has(config.roleId)) {
       console.error(`ROLE_ID ${config.roleId} was not found in this server.`);
       process.exit(1);
@@ -59,18 +56,14 @@ export async function startBot() {
     console.log(`Tracking ${count} members`);
   });
 
-  // status or activity changed
   client.on('presenceUpdate', async (oldPresence, newPresence) => {
     const member =
       newPresence.member ?? (await newPresence.guild.members.fetch(newPresence.userId));
     await track(member, newPresence);
   });
 
-  // nickname, roles or server avatar changed (also handles gaining/losing ROLE_ID)
   client.on('guildMemberUpdate', (oldMember, newMember) => track(newMember));
-
   client.on('guildMemberAdd', (member) => track(member));
-  
   client.on('guildMemberRemove', (member) => removeUser(member.id));
 
   await client.login(config.token);

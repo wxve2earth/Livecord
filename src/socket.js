@@ -3,17 +3,15 @@ import { events, getUser, getAllUsers } from './state.js';
 
 const HEARTBEAT_INTERVAL = 30000;
 const OP = { EVENT: 0, HELLO: 1, INITIALIZE: 2, HEARTBEAT: 3 };
-
 const MAX_CONNECTIONS_PER_IP = 10;
 const MAX_SUBSCRIPTIONS = 50;
-const connectionsPerIp = new Map(); 
+const connectionsPerIp = new Map();
 
 export function attachSocket(server) {
   const wss = new WebSocketServer({ server, path: '/socket', maxPayload: 4096 });
 
   wss.on('connection', (ws, req) => {
-    // per-client state (set first so the update loop below can always read it)
-    ws.subscriptions = new Set(); // user IDs this client follows
+    ws.subscriptions = new Set();
     ws.subscribeAll = false;
     let seq = 0;
 
@@ -23,7 +21,6 @@ export function attachSocket(server) {
       ws.send(JSON.stringify({ op: OP.EVENT, seq, t, d }));
     };
 
-    // connection limit per IP
     const ip = req.socket.remoteAddress;
     const count = connectionsPerIp.get(ip) ?? 0;
     if (count >= MAX_CONNECTIONS_PER_IP) {
@@ -36,7 +33,6 @@ export function attachSocket(server) {
       else connectionsPerIp.set(ip, left);
     });
 
-    // close the connection if the client stops sending heartbeats
     let timeout;
     const resetTimeout = () => {
       clearTimeout(timeout);
@@ -46,8 +42,8 @@ export function attachSocket(server) {
       );
     };
     resetTimeout();
+    ws.on('close', () => clearTimeout(timeout));
 
-    // 1. say hello
     ws.send(JSON.stringify({ op: OP.HELLO, d: { heartbeat_interval: HEARTBEAT_INTERVAL } }));
 
     ws.on('message', (raw) => {
@@ -80,26 +76,24 @@ export function attachSocket(server) {
             const user = getUser(id);
             if (user) state[id] = user;
           }
-          ws.sendEvent('INIT_STATE', state); // object: { id: data, ... }
+          ws.sendEvent('INIT_STATE', state);
         } else if (d.subscribe_to_id) {
           const id = String(d.subscribe_to_id);
           ws.subscriptions.add(id);
-          ws.sendEvent('INIT_STATE', getUser(id) ?? null); // null = not monitored
+          ws.sendEvent('INIT_STATE', getUser(id) ?? null);
         } else {
           ws.close(4006, 'Missing subscribe_to_id, subscribe_to_ids or subscribe_to_all');
         }
       }
     });
-
-    ws.on('close', () => clearTimeout(timeout));
   });
 
-  // push every change to the clients following that user
-  events.on('update', (id, data) => {
+  function broadcast(id, type, data) {
     for (const ws of wss.clients) {
-      if (ws.subscribeAll || ws.subscriptions.has(id)) {
-        ws.sendEvent('PRESENCE_UPDATE', data);
-      }
+      if (ws.subscribeAll || ws.subscriptions?.has(id)) ws.sendEvent?.(type, data);
     }
-  });
+  }
+
+  events.on('update', (id, data) => broadcast(id, 'PRESENCE_UPDATE', data));
+  events.on('remove', (id) => broadcast(id, 'USER_REMOVED', { id }));
 }

@@ -63,8 +63,6 @@ CORS is enabled, so it works from any website. Each request returns the data onc
       "avatar_url": "https://cdn.discordapp.com/avatars/1263841243839070229/a7cd2b93d09c10c0fc2af450598a9550.webp?size=256",
       "avatar_decoration_url": null,
       "banner_url": null,
-      "accent_color": null,
-      "accent_color_hex": null,
       "server_tag": null,
       "bot": false,
       "badges": [],
@@ -77,40 +75,34 @@ CORS is enabled, so it works from any website. Each request returns the data onc
     "platforms": [
       "desktop"
     ],
-    "active_on_discord_desktop": true,
-    "active_on_discord_mobile": false,
-    "active_on_discord_web": false,
     "listening_to_spotify": true,
     "spotify": {
       "track_id": "6Rvi7T8vQkkIYQcp1DWm3u",
+      "track_url": "https://open.spotify.com/track/6Rvi7T8vQkkIYQcp1DWm3u",
       "song": "vintage vuitton",
       "artist": "earfzilla",
+      "artists": [
+        "earfzilla"
+      ],
       "album": "vintage vuitton",
       "album_art_url": "https://i.scdn.co/image/ab67616d0000b27312d3b2c865fe98d50162f097",
       "timestamps": {
-        "start": 1793452800384,
-        "end": 1793452887348
+        "start": 1793456966270,
+        "end": 1793457053234
       }
     },
     "activities": [
       {
         "name": "Spotify",
         "type": 2,
-        "url": null,
         "details": "vintage vuitton",
         "state": "earfzilla",
         "application_id": null,
         "app_icon": null,
-        "created_at": 1793452800086,
-        "flags": 48,
-        "buttons": [],
-        "party": {
-          "id": "spotify:1263841243839070229",
-          "size": null
-        },
+        "created_at": 1793456965995,
         "timestamps": {
-          "start": 1793452800384,
-          "end": 1793452887348
+          "start": 1793456966270,
+          "end": 1793457053234
         },
         "assets": {
           "large_image": "https://i.scdn.co/image/ab67616d0000b27312d3b2c865fe98d50162f097",
@@ -118,8 +110,7 @@ CORS is enabled, so it works from any website. Each request returns the data onc
           "small_image": null,
           "small_text": null
         },
-        "emoji": null,
-        "sync_id": "6Rvi7T8vQkkIYQcp1DWm3u"
+        "emoji": null
       }
     ]
   }
@@ -130,11 +121,11 @@ CORS is enabled, so it works from any website. Each request returns the data onc
 
 | Field | Description |
 | ----- | ----------- |
-| `discord_user` | Profile: `id`, `username`, `display_name`, `avatar_url`, `banner_url`, `accent_color_hex`, `badges`, `created_at` (fields are `null` if not set on the account) |
+| `discord_user` | Profile: `id`, `username`, `display_name`, `avatar_url`, `banner_url`, `badges`, `created_at` (fields are `null` if not set on the account) |
 | `discord_status` | `online`, `idle`, `dnd`, or `offline` |
 | `platforms` | Where the user is active: `desktop`, `mobile`, `web` (`client_status` has the status for each) |
 | `listening_to_spotify` | `true` while a Spotify track is playing |
-| `spotify` | `song`, `artist`, `album`, `album_art_url`, `timestamps`. `null` when not listening |
+| `spotify` | `song`, `artist` (all artists as one text), `artists` (list), `album`, `album_art_url`, `track_url`, `timestamps`. `null` when not listening |
 | `activities` | Everything else the user is doing: games, apps, custom status |
 
 Timestamps are Unix time in **milliseconds**, so `new Date(timestamp)` works directly.

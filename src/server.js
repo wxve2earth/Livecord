@@ -7,11 +7,11 @@ import { config } from './config.js';
 
 export function startServer(port) {
     const app = express();
-    app.use(cors()); // lets websites on any domain call your API
+    app.use(cors());
     const limiter = rateLimit({
         windowMs: config.rateWindow * 1000,
         limit: config.rateLimit,
-        standardHeaders: 'draft-7', // sends RateLimit-* headers so clients can see their limit
+        standardHeaders: 'draft-7',
         legacyHeaders: false,
         handler: (req, res) => {
         res.status(429).json({
