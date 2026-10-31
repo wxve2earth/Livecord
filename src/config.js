@@ -15,7 +15,6 @@ export const config = {
     token: required('DISCORD_TOKEN'),
     guildId: required('GUILD_ID'),
     port,
-    publicUrl: (process.env.PUBLIC_URL || `http://localhost:${port}`).replace(/\/$/, ''),
     roleId: process.env.ROLE_ID || null,
     channelId: process.env.CHANNEL_ID || null,
     rateLimit: Number(process.env.RATE_LIMIT) || 60,

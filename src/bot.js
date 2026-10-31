@@ -53,7 +53,6 @@ export async function startBot() {
     for (const member of members.values()) {
       if (await track(member)) count++;
     }
-    console.log(`Tracking ${count} members`);
   });
 
   client.on('presenceUpdate', async (oldPresence, newPresence) => {

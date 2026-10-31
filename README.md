@@ -176,9 +176,9 @@ ws.onmessage = (event) => {
 
 | Op | Direction | Meaning |
 | -- | --------- | ------- |
-| `0` | Server → you | Event: `INIT_STATE` (current data), then `PRESENCE_UPDATE` |
+| `0` | Server → you | Event: `INIT_STATE` (current data), then `PRESENCE_UPDATE` on every change, or `USER_REMOVED` if the user leaves the server |
 | `1` | Server → you | Hello, with `heartbeat_interval` in ms |
 | `2` | You → server | Pick who to follow |
 | `3` | You → server | Heartbeat. Send one every interval, or the connection closes after about 40 seconds |
 
-To follow several users, send `{ "op": 2, "d": { "subscribe_to_ids": ["123...", "456..."] } }` (max 50), or `{ "subscribe_to_all": true }` for everyone. For those two, `INIT_STATE` is an object keyed by user ID.
+To follow several users, send `{ "op": 2, "d": { "subscribe_to_ids": ["123...", "456..."] } }` (max 10). In that case, `INIT_STATE` is an object keyed by user ID.

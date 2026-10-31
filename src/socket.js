@@ -1,10 +1,10 @@
 import { WebSocketServer, WebSocket } from 'ws';
-import { events, getUser, getAllUsers } from './state.js';
+import { events, getUser } from './state.js';
 
 const HEARTBEAT_INTERVAL = 30000;
 const OP = { EVENT: 0, HELLO: 1, INITIALIZE: 2, HEARTBEAT: 3 };
 const MAX_CONNECTIONS_PER_IP = 10;
-const MAX_SUBSCRIPTIONS = 50;
+const MAX_SUBSCRIPTIONS = 10;
 const connectionsPerIp = new Map();
 
 export function attachSocket(server) {
@@ -12,7 +12,6 @@ export function attachSocket(server) {
 
   wss.on('connection', (ws, req) => {
     ws.subscriptions = new Set();
-    ws.subscribeAll = false;
     let seq = 0;
 
     ws.sendEvent = (t, d) => {
@@ -63,15 +62,13 @@ export function attachSocket(server) {
         resetTimeout();
         const d = msg.d ?? {};
 
-        if (d.subscribe_to_all) {
-          ws.subscribeAll = true;
-          ws.sendEvent('INIT_STATE', getAllUsers());
-        } else if (Array.isArray(d.subscribe_to_ids)) {
-          if (d.subscribe_to_ids.length > MAX_SUBSCRIPTIONS) {
+        if (Array.isArray(d.subscribe_to_ids)) {
+          const ids = d.subscribe_to_ids.map(String);
+          if (new Set([...ws.subscriptions, ...ids]).size > MAX_SUBSCRIPTIONS) {
             return ws.close(4007, 'Too many subscriptions');
           }
           const state = {};
-          for (const id of d.subscribe_to_ids.map(String)) {
+          for (const id of ids) {
             ws.subscriptions.add(id);
             const user = getUser(id);
             if (user) state[id] = user;
@@ -79,10 +76,13 @@ export function attachSocket(server) {
           ws.sendEvent('INIT_STATE', state);
         } else if (d.subscribe_to_id) {
           const id = String(d.subscribe_to_id);
+          if (!ws.subscriptions.has(id) && ws.subscriptions.size >= MAX_SUBSCRIPTIONS) {
+            return ws.close(4007, 'Too many subscriptions');
+          }
           ws.subscriptions.add(id);
           ws.sendEvent('INIT_STATE', getUser(id) ?? null);
         } else {
-          ws.close(4006, 'Missing subscribe_to_id, subscribe_to_ids or subscribe_to_all');
+          ws.close(4006, 'Missing subscribe_to_id or subscribe_to_ids');
         }
       }
     });
@@ -90,7 +90,7 @@ export function attachSocket(server) {
 
   function broadcast(id, type, data) {
     for (const ws of wss.clients) {
-      if (ws.subscribeAll || ws.subscriptions?.has(id)) ws.sendEvent?.(type, data);
+      if (ws.subscriptions?.has(id)) ws.sendEvent?.(type, data);
     }
   }
 
