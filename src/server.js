@@ -1,7 +1,6 @@
 import express from 'express';
 import cors from 'cors';
 import { getUser } from './state.js';
-import { fileURLToPath } from 'node:url';
 import { rateLimit } from 'express-rate-limit';
 import { config } from './config.js';
 
@@ -24,9 +23,6 @@ export function startServer(port) {
         },
     });
     app.use('/v1', limiter);
-    const examplesDir = fileURLToPath(new URL('../examples/', import.meta.url));
-    app.use('/demo', express.static(examplesDir, { index: 'demo.html' }));
-
     app.get('/', (req, res) => {
         res.json({ success: true, message: 'API is running' });
     });
