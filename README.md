@@ -1,10 +1,13 @@
 # Livecord
 
-> [!WARNING]
-> LIVECORD IS CURRENTLY DOWN.
 > Your Discord profile and live activity as JSON, ready to use on your website.
 
 Livecord is a Discord bot and API that exposes the profile, status, Spotify, and game activity of everyone in the Livecord server.
+
+---
+
+> [!WARNING]
+> LIVECORD IS CURRENTLY DOWN.
 
 ---
 
