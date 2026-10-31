@@ -1,5 +1,6 @@
 import { ActivityType } from 'discord.js';
 import { getAppIcon } from './appIcons.js';
+import { getProfile } from './profile.js';
 
 const toMs = (date) => (date ? date.getTime() : null);
 
@@ -7,12 +8,16 @@ function serializeActivity(a) {
   return {
     id: a.id,
     name: a.name,
-    type: a.type,
+    type: a.type, // 0 playing, 1 streaming, 2 listening, 3 watching, 4 custom, 5 competing
+    url: a.url ?? null, // stream link
     details: a.details,
     state: a.state,
     application_id: a.applicationId,
     app_icon: a.applicationId ? getAppIcon(a.applicationId) : null,
     created_at: a.createdTimestamp,
+    flags: a.flags?.bitfield ?? 0,
+    buttons: a.buttons ?? [], // button labels
+    party: a.party ? { id: a.party.id ?? null, size: a.party.size ?? null } : null,
     timestamps: {
       start: toMs(a.timestamps?.start),
       end: toMs(a.timestamps?.end),
@@ -34,7 +39,9 @@ function serializeActivity(a) {
 
 export function serializeMember(member, presence = member.presence) {
   const user = member.user;
+  const profile = getProfile(user.id);
   const activities = presence?.activities ?? [];
+  const clientStatus = presence?.clientStatus ?? {};
 
   const spotifyActivity = activities.find(
     (a) => a.type === ActivityType.Listening && a.name === 'Spotify'
@@ -47,21 +54,26 @@ export function serializeMember(member, presence = member.presence) {
       global_name: user.globalName,
       display_name: member.displayName,
       avatar_url: user.displayAvatarURL({ size: 256 }),
+      avatar_decoration_url: user.avatarDecorationURL?.() ?? null,
+      banner_url: profile.banner_url,
+      accent_color: profile.accent_color,
+      accent_color_hex:
+        profile.accent_color != null
+          ? '#' + profile.accent_color.toString(16).padStart(6, '0')
+          : null,
+      server_tag: user.primaryGuild?.tag
+        ? { tag: user.primaryGuild.tag, guild_id: user.primaryGuild.identityGuildId }
+        : null,
       bot: user.bot,
       badges: user.flags?.toArray() ?? [],
       created_at: user.createdAt.toISOString(),
     },
-    guild_member: {
-      nickname: member.nickname,
-      server_avatar_url: member.avatarURL({ size: 256 }),
-      joined_at: member.joinedAt?.toISOString() ?? null,
-      boosting_since: member.premiumSince?.toISOString() ?? null,
-      roles: member.roles.cache
-        .filter((role) => role.name !== '@everyone')
-        .map((role) => ({ id: role.id, name: role.name, color: role.color })),
-    },
     discord_status: presence?.status ?? 'offline',
-    platforms: Object.keys(presence?.clientStatus ?? {}),
+    client_status: clientStatus, // e.g. { desktop: "idle", mobile: "online" }
+    platforms: Object.keys(clientStatus),
+    active_on_discord_desktop: Boolean(clientStatus.desktop),
+    active_on_discord_mobile: Boolean(clientStatus.mobile),
+    active_on_discord_web: Boolean(clientStatus.web),
     listening_to_spotify: Boolean(spotifyActivity),
     spotify: spotifyActivity
       ? {

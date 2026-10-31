@@ -3,6 +3,7 @@ import { config } from './config.js';
 import { setUser, removeUser } from './state.js';
 import { serializeMember } from './serialize.js';
 import { primeAppIcons } from './appIcons.js';
+import { primeProfile } from './profile.js';
 
 // should this member be exposed through the API?
 function isTracked(member) {
@@ -20,6 +21,7 @@ async function track(member, presence = member.presence) {
     removeUser(member.id);
     return false;
   }
+  await primeProfile(member.user);
   await primeAppIcons(presence?.activities ?? []);
   setUser(member.id, serializeMember(member, presence));
   return true;
@@ -68,7 +70,7 @@ export async function startBot() {
   client.on('guildMemberUpdate', (oldMember, newMember) => track(newMember));
 
   client.on('guildMemberAdd', (member) => track(member));
-
+  
   client.on('guildMemberRemove', (member) => removeUser(member.id));
 
   await client.login(config.token);
