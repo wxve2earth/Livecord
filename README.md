@@ -4,6 +4,9 @@
 
 Livecord is a Discord bot and API that exposes the profile, status, Spotify, and game activity of everyone in the Livecord server.
 
+## Website
+Visit the [Livecord](https://vassy.dev/livecord) website to learn more about the API and how to use it.
+
 ## Quick start
 
 1. **Join the Discord server:** [Join Livecord](https://discord.com/invite/TE8tZVcv85)
