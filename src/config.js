@@ -14,6 +14,7 @@ const port = Number(process.env.PORT) || 5000;
 export const config = {
     token: required('DISCORD_TOKEN'),
     guildId: required('GUILD_ID'),
+    host: process.env.HOST || '127.0.0.1',
     port,
     roleId: process.env.ROLE_ID || null,
     channelId: process.env.CHANNEL_ID || null,

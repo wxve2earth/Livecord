@@ -1,3 +1,5 @@
+process.on('unhandledRejection', (err) => console.error('Unhandled rejection:', err));
+
 import { config } from './config.js';
 import { startBot } from './bot.js';
 import { startServer } from './server.js';

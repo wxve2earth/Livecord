@@ -6,6 +6,7 @@ import { config } from './config.js';
 
 export function startServer(port) {
     const app = express();
+    app.set('trust proxy', 'loopback');
     app.use(cors());
     const limiter = rateLimit({
         windowMs: config.rateWindow * 1000,
@@ -22,12 +23,12 @@ export function startServer(port) {
         });
         },
     });
-    app.use('/v1', limiter);
+    app.use('/livecord/v1', limiter);
     app.get('/', (req, res) => {
         res.json({ success: true, message: 'API is running' });
     });
 
-    app.get('/v1/users/:id', (req, res) => {
+    app.get('/livecord/v1/users/:id', (req, res) => {
         const data = getUser(req.params.id);
 
         if (!data) {
@@ -44,9 +45,9 @@ export function startServer(port) {
     });
 
     return new Promise((resolve) => {
-        const server = app.listen(port, () => {
-        console.log(`API listening on http://localhost:${port}`);
-        resolve(server);
+        const server = app.listen(port, config.host, () => {
+            console.log(`API listening on http://${config.host}:${port}`);
+            resolve(server);
         });
     });
 }

@@ -7,8 +7,17 @@ const MAX_CONNECTIONS_PER_IP = 10;
 const MAX_SUBSCRIPTIONS = 10;
 const connectionsPerIp = new Map();
 
+function clientIp(req) {
+  const direct = req.socket.remoteAddress;
+  const fromLocalProxy =
+    direct === '127.0.0.1' || direct === '::1' || direct === '::ffff:127.0.0.1';
+  const real = req.headers['x-real-ip'];
+
+  return fromLocalProxy && real ? String(real) : direct;
+}
+
 export function attachSocket(server) {
-  const wss = new WebSocketServer({ server, path: '/socket', maxPayload: 4096 });
+  const wss = new WebSocketServer({ server, path: '/livecord/socket', maxPayload: 4096 });
 
   wss.on('connection', (ws, req) => {
     ws.subscriptions = new Set();
@@ -20,7 +29,7 @@ export function attachSocket(server) {
       ws.send(JSON.stringify({ op: OP.EVENT, seq, t, d }));
     };
 
-    const ip = req.socket.remoteAddress;
+    const ip = clientIp(req);
     const count = connectionsPerIp.get(ip) ?? 0;
     if (count >= MAX_CONNECTIONS_PER_IP) {
       return ws.close(4008, 'Too many connections');

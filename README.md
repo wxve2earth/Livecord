@@ -17,7 +17,7 @@ Livecord is a Discord bot and API that exposes the profile, status, Spotify, and
 2. **Open your link:**
 
 ```text
-https://livecord.dev/v1/users/YOUR_DISCORD_ID
+https://vassy.dev/livecord/v1/users/YOUR_DISCORD_ID
 ```
 
 The JSON updates by itself whenever your status or activity changes.
@@ -28,10 +28,10 @@ The JSON updates by itself whenever your status or activity changes.
 
 ## REST API
 
-### `GET /v1/users/:id`
+### `GET /livecord/v1/users/:id`
 
 ```js
-fetch('https://livecord.dev/v1/users/YOUR_DISCORD_ID')
+fetch('https://vassy.dev/livecord/v1/users/YOUR_DISCORD_ID')
   .then((res) => res.json())
   .then((json) => console.log(json.data));
 ```
@@ -156,7 +156,7 @@ const image = game?.assets?.large_image ?? game?.app_icon;
 Use the WebSocket for instant updates without asking again and again. Connect once, and the server sends a message every time something changes.
 
 ```js
-const ws = new WebSocket('wss://livecord.dev/socket');
+const ws = new WebSocket('wss://vassy.dev/livecord/socket');
 
 ws.onmessage = (event) => {
   const msg = JSON.parse(event.data);
